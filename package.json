@@ -1,0 +1,18 @@
+{
+  "main": "dist/index.js",
+  "bin": {
+    "drain-wallet": "dist/index.js"
+  },
+  "scripts": {
+    "start": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@types/node": "^24.1.0",
+    "axios": "^1.11.0",
+    "commander": "^14.0.0",
+    "ethers": "^6.15.0",
+    "readline": "^1.3.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
