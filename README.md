@@ -28,7 +28,7 @@ yarn install
 
 ### Dry-run (no transactions sent)
 ```bash
-yarn start -- --private-key <PRIVATE_KEY> --out <DEST_ADDRESS> --dry-run
+yarn start --private-key <PRIVATE_KEY> --out <DEST_ADDRESS> --dry-run
 ```
 
 ### Real transfers (with confirmation prompt)
@@ -38,12 +38,17 @@ yarn start --private-key <PRIVATE_KEY> --out <DEST_ADDRESS>
 
 ### Real transfers (skip confirmation)
 ```bash
-yarn start -- --private-key <PRIVATE_KEY> --out <DEST_ADDRESS> --force
+yarn start --private-key <PRIVATE_KEY> --out <DEST_ADDRESS> --force
 ```
 
 ### Limit max gas price (in gwei)
 ```bash
-yarn start -- --private-key <PRIVATE_KEY> --out <DEST_ADDRESS> --max-gas-price 30
+yarn start --private-key <PRIVATE_KEY> --out <DEST_ADDRESS> --max-gas-price 30
+```
+
+### Skip ERC20 (non-native) token transfers
+```bash
+yarn start --private-key <PRIVATE_KEY> --out <DEST_ADDRESS> --skip-erc20
 ```
 
 ## CLI Options
@@ -52,6 +57,7 @@ yarn start -- --private-key <PRIVATE_KEY> --out <DEST_ADDRESS> --max-gas-price 3
 - `--dry-run`: Simulate actions without sending transactions (default: false)
 - `--force`: Skip confirmation prompt and proceed with transfers (default: false)
 - `--max-gas-price <gwei>`: Maximum gas price (in gwei) for transactions (optional)
+- `--skip-erc20`: Skip transferring non-native (ERC20) tokens (default: false)
 
 ## Safety Notes
 - **Always test with `--dry-run` first!**

@@ -24,6 +24,7 @@ program
   .option('--dry-run', 'Simulate actions without sending transactions', false)
   .option('--force', 'Skip confirmation prompt and proceed with transfers', false)
   .option('--max-gas-price <gwei>', 'Maximum gas price (in gwei) for transactions', parseFloat)
+  .option('--skip-erc20', 'Skip transferring non-native (ERC20) tokens', false)
   .parse(process.argv);
 
 const opts = program.opts();
@@ -65,18 +66,20 @@ async function dryRunDrain(chain: any, rpcUrl: string, tokens: any[], wallet: Wa
   console.log(`\n[${chain.chainId}]`);
   console.log(`  Wallet: ${address}`);
   // Drain non-native tokens first
-  for (const token of tokens.filter((t: any) => !t.isNative)) {
-    try {
-      const contract = new Contract(token.address, ERC20_ABI, provider);
-      const balance: bigint = await contract.balanceOf(address);
-      if (balance > 0n) {
-        const decimals = token.decimals || (await contract.decimals());
-        const symbol = token.symbol || (await contract.symbol());
-        const formatted = formatUnits(balance, decimals);
-        console.log(`  [DRY-RUN] Would send ${formatted} ${symbol} (${token.address}) to ${outAddress}`);
+  if (!opts.skipErc20) {
+    for (const token of tokens.filter((t: any) => !t.isNative)) {
+      try {
+        const contract = new Contract(token.address, ERC20_ABI, provider);
+        const balance: bigint = await contract.balanceOf(address);
+        if (balance > 0n) {
+          const decimals = token.decimals || (await contract.decimals());
+          const symbol = token.symbol || (await contract.symbol());
+          const formatted = formatUnits(balance, decimals);
+          console.log(`  [DRY-RUN] Would send ${formatted} ${symbol} (${token.address}) to ${outAddress}`);
+        }
+      } catch (err) {
+        console.warn(`  [WARN] Could not check/send token ${token.symbol || token.address}:`, (err as Error).message);
       }
-    } catch (err) {
-      console.warn(`  [WARN] Could not check/send token ${token.symbol || token.address}:`, (err as Error).message);
     }
   }
   // Drain native token
@@ -147,22 +150,24 @@ async function transferAll(chain: any, rpcUrl: string, tokens: any[], wallet: Wa
     }
   }
   // Transfer non-native tokens first
-  for (const token of tokens.filter((t: any) => !t.isNative)) {
-    try {
-      const contract = new Contract(token.address, ERC20_ABI, connectedWallet);
-      const balance: bigint = await contract.balanceOf(address);
-      if (balance > 0n) {
-        const decimals = token.decimals || (await contract.decimals());
-        const symbol = token.symbol || (await contract.symbol());
-        const formatted = formatUnits(balance, decimals);
-        console.log(`  Sending ${formatted} ${symbol} (${token.address}) to ${outAddress}...`);
-        const tx = await contract.transfer(outAddress, balance, gasPrice ? { gasPrice } : {});
-        console.log(`    [TX] ${tx.hash} (waiting for confirmation...)`);
-        await tx.wait();
-        console.log('    [OK] Confirmed!');
+  if (!opts.skipErc20) {
+    for (const token of tokens.filter((t: any) => !t.isNative)) {
+      try {
+        const contract = new Contract(token.address, ERC20_ABI, connectedWallet);
+        const balance: bigint = await contract.balanceOf(address);
+        if (balance > 0n) {
+          const decimals = token.decimals || (await contract.decimals());
+          const symbol = token.symbol || (await contract.symbol());
+          const formatted = formatUnits(balance, decimals);
+          console.log(`  Sending ${formatted} ${symbol} (${token.address}) to ${outAddress}...`);
+          const tx = await contract.transfer(outAddress, balance, gasPrice ? { gasPrice } : {});
+          console.log(`    [TX] ${tx.hash} (waiting for confirmation...)`);
+          await tx.wait();
+          console.log('    [OK] Confirmed!');
+        }
+      } catch (err) {
+        console.warn(`  [WARN] Could not send token ${token.symbol || token.address}:`, (err as Error).message);
       }
-    } catch (err) {
-      console.warn(`  [WARN] Could not send token ${token.symbol || token.address}:`, (err as Error).message);
     }
   }
   // Transfer native token
